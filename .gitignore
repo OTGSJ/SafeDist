@@ -1,0 +1,14 @@
+**/build/
+**/sdkconfig
+**/sdkconfig.old
+**/managed_components/
+
+**/node_modules/
+**/dist/
+.npm
+.env
+
+.vscode/
+.idea/
+.DS_Store
+*.log
