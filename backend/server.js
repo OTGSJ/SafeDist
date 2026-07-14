@@ -66,9 +66,47 @@ app.post("/api/devices", async (req, res) => {
 app.get("/api/devices", async (req, res) => {
   try {
     const devices = await Device.find().sort({ name: 1 });
-    res.json(devices.map((d) => d.name));
+    res.json(devices);
   } catch (err) {
     res.status(500).json({ error: "Erro ao buscar dispositivos" });
+  }
+});
+
+// CRUD: Atualizar dispositivo (nome, descrição, status)
+app.put("/api/devices/:id", async (req, res) => {
+  try {
+    const { name, description, isActive } = req.body;
+
+    const updated = await Device.findByIdAndUpdate(
+      req.params.id,
+      { name, description, isActive },
+      { new: true, runValidators: true },
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: "Dispositivo não encontrado" });
+    }
+
+    res.json({ message: "Dispositivo atualizado com sucesso!", device: updated });
+  } catch (err) {
+    console.error("Erro ao atualizar dispositivo:", err);
+    res.status(500).json({ error: "Erro ao atualizar dispositivo" });
+  }
+});
+
+// CRUD: Excluir dispositivo individual
+app.delete("/api/devices/:id", async (req, res) => {
+  try {
+    const deleted = await Device.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ error: "Dispositivo não encontrado" });
+    }
+
+    res.json({ message: `Dispositivo "${deleted.name}" excluído com sucesso!` });
+  } catch (err) {
+    console.error("Erro ao excluir dispositivo:", err);
+    res.status(500).json({ error: "Erro ao excluir dispositivo" });
   }
 });
 

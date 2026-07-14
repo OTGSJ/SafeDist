@@ -22,8 +22,24 @@ const App = () => {
   const [devices, setDevices] = useState([]);
   const [selectedBeacon, setSelectedBeacon] = useState("");
   const [newDeviceName, setNewDeviceName] = useState("");
+  const [editingDevice, setEditingDevice] = useState(null); // dispositivo sendo editado (ou null)
+  const [editName, setEditName] = useState("");
 
-  const [user, setUser] = useState(null);
+  // Sessão persistente: recupera o usuário logado do localStorage (sobrevive ao F5)
+  const [user, setUser] = useState(() => {
+    const saved = localStorage.getItem("safedist_user");
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const handleLoginSuccess = (userData) => {
+    localStorage.setItem("safedist_user", JSON.stringify(userData));
+    setUser(userData);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("safedist_user");
+    setUser(null);
+  };
 
   // Busca histórico e lista de dispositivos (Mantido intacto)
   const fetchAllData = async () => {
@@ -95,6 +111,61 @@ const App = () => {
     }
   };
 
+  const startEditDevice = (device) => {
+    setEditingDevice(device);
+    setEditName(device.name);
+  };
+
+  const cancelEditDevice = () => {
+    setEditingDevice(null);
+    setEditName("");
+  };
+
+  const saveEditDevice = async () => {
+    if (!editName.trim() || !editingDevice) return;
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/devices/${editingDevice._id}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: editName,
+            description: editingDevice.description,
+            isActive: editingDevice.isActive,
+          }),
+        },
+      );
+
+      if (response.ok) {
+        cancelEditDevice();
+        fetchAllData();
+      } else {
+        alert("Erro ao atualizar dispositivo.");
+      }
+    } catch (error) {
+      console.error("Erro ao atualizar dispositivo:", error);
+    }
+  };
+
+  const deleteDevice = async (device) => {
+    if (!window.confirm(`Excluir o dispositivo "${device.name}"?`)) return;
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/devices/${device._id}`,
+        { method: "DELETE" },
+      );
+
+      if (response.ok) {
+        fetchAllData();
+      } else {
+        alert("Erro ao excluir dispositivo.");
+      }
+    } catch (error) {
+      console.error("Erro ao excluir dispositivo:", error);
+    }
+  };
+
   const clearDb = async () => {
     if (window.confirm("Limpar todo o histórico de medições?")) {
       await fetch("http://localhost:3001/api/distance/clear", {
@@ -111,7 +182,7 @@ const App = () => {
   }, []);
 
   if (!user) {
-    return <Login onLoginSuccess={(userData) => setUser(userData)} />;
+    return <Login onLoginSuccess={handleLoginSuccess} />;
   }
 
   return (
@@ -208,7 +279,7 @@ const App = () => {
           </button>
           {/* Botão para deslogar */}
           <button
-            onClick={() => setUser(null)}
+            onClick={handleLogout}
             style={{
               border: "1px solid #94a3b8",
               backgroundColor: "transparent",
@@ -334,8 +405,8 @@ const App = () => {
             >
               <option value="">Selecione um Beacon...</option>
               {devices.map((dev) => (
-                <option key={dev} value={dev}>
-                  {dev}
+                <option key={dev._id} value={dev.name}>
+                  {dev.name}
                 </option>
               ))}
             </select>
@@ -375,6 +446,142 @@ const App = () => {
                 <RefreshCw size={18} />
               </button>
             </div>
+          </div>
+
+          {/* Tabela de Gerenciamento de Dispositivos (CRUD completo) */}
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: "25px",
+              borderRadius: "15px",
+              boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
+            }}
+          >
+            <h3
+              style={{
+                margin: "0 0 20px 0",
+                fontSize: "1.1rem",
+                color: "#475569",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <Settings size={20} /> Dispositivos Cadastrados
+            </h3>
+
+            {devices.length === 0 ? (
+              <p style={{ color: "#94a3b8", fontSize: "0.9rem" }}>
+                Nenhum dispositivo cadastrado ainda.
+              </p>
+            ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid #e2e8f0" }}>
+                    <th
+                      style={{
+                        textAlign: "left",
+                        padding: "8px 4px",
+                        fontSize: "0.75rem",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      NOME
+                    </th>
+                    <th
+                      style={{
+                        textAlign: "right",
+                        padding: "8px 4px",
+                        fontSize: "0.75rem",
+                        color: "#94a3b8",
+                      }}
+                    >
+                      AÇÕES
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {devices.map((dev) => (
+                    <tr key={dev._id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                      <td style={{ padding: "10px 4px" }}>
+                        {editingDevice && editingDevice._id === dev._id ? (
+                          <input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            style={{
+                              width: "100%",
+                              padding: "6px 8px",
+                              borderRadius: "6px",
+                              border: "1px solid #e2e8f0",
+                            }}
+                          />
+                        ) : (
+                          dev.name
+                        )}
+                      </td>
+                      <td style={{ padding: "10px 4px", textAlign: "right" }}>
+                        {editingDevice && editingDevice._id === dev._id ? (
+                          <>
+                            <button
+                              onClick={saveEditDevice}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "#10b981",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                marginRight: "10px",
+                              }}
+                            >
+                              Salvar
+                            </button>
+                            <button
+                              onClick={cancelEditDevice}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "#94a3b8",
+                                cursor: "pointer",
+                              }}
+                            >
+                              Cancelar
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <button
+                              onClick={() => startEditDevice(dev)}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "#3b82f6",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                                marginRight: "10px",
+                              }}
+                            >
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => deleteDevice(dev)}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "#ef4444",
+                                cursor: "pointer",
+                                fontWeight: "bold",
+                              }}
+                            >
+                              Excluir
+                            </button>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           <button

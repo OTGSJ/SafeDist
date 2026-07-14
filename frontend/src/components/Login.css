@@ -97,6 +97,18 @@
   opacity: 0.7;
 }
 
+.login-button-secondary {
+  background-color: transparent;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  margin-top: 12px;
+}
+
+.login-button-secondary:hover {
+  background-color: #eff6ff;
+  box-shadow: none;
+}
+
 .login-alert {
   padding: 12px;
   border-radius: 8px;
