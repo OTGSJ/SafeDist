@@ -1,0 +1,26 @@
+.status-card__indicator {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  color: #fff;
+  text-align: center;
+  transition: var(--transition-slow);
+}
+
+.status-card__icon {
+  margin-bottom: var(--space-xs);
+  display: flex;
+  justify-content: center;
+}
+
+.status-card__label {
+  font-weight: 700;
+  font-size: var(--font-size-lg);
+}
+
+.status-card__distance {
+  text-align: center;
+  margin-top: 15px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  font-size: var(--font-size-base);
+}

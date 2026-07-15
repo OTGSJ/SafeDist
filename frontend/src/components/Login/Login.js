@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { loginUser, registerUser } from "../../api/authApi";
 import "./Login.css";
 
 function Login({ onLoginSuccess }) {
@@ -27,53 +27,32 @@ function Login({ onLoginSuccess }) {
   const handleLogin = async (e) => {
     e.preventDefault();
     resetFeedback();
-
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/users/login",
-        { name, password },
-      );
-
-      setMessage(response.data.message);
-
-      if (onLoginSuccess) {
-        onLoginSuccess(response.data.user);
-      }
+      const data = await loginUser(name, password);
+      setMessage(data.message);
+      if (onLoginSuccess) onLoginSuccess(data.user);
     } catch (err) {
-      if (err.response && err.response.data) {
-        setError(err.response.data.error);
-      } else {
-        setError("Erro ao tentar conectar ao servidor.");
-      }
+      setError(
+        err.response?.data?.error ?? "Erro ao tentar conectar ao servidor."
+      );
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
     resetFeedback();
-
     if (password !== confirmPassword) {
       setError("As senhas não coincidem.");
       return;
     }
-
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/users/register",
-        { name, password },
-      );
-
-      setMessage(`${response.data.message} Faça login para continuar.`);
-      // Volta para a tela de login já com o nome preenchido
-      setMode("login");
-      setPassword("");
-      setConfirmPassword("");
+      const data = await registerUser(name, password);
+      setMessage(`${data.message} Faça login para continuar.`);
+      switchMode("login");
     } catch (err) {
-      if (err.response && err.response.data) {
-        setError(err.response.data.error);
-      } else {
-        setError("Erro ao tentar conectar ao servidor.");
-      }
+      setError(
+        err.response?.data?.error ?? "Erro ao tentar conectar ao servidor."
+      );
     }
   };
 
@@ -83,7 +62,7 @@ function Login({ onLoginSuccess }) {
     <div className="login-container">
       <div className="login-card">
         <h2 className="login-title">
-          {isRegister ? "Criar Conta - SafeDist" : "Login - SafeDist"}
+          {isRegister ? "Criar Conta — SafeDist" : "Login — SafeDist"}
         </h2>
         <p className="login-subtitle">
           {isRegister

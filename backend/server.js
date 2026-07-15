@@ -1,122 +1,54 @@
+require("dotenv").config();
+
 const express = require("express");
-const mongoose = require("mongoose");
 const cors = require("cors");
+
+const { connectMongo } = require("./src/config/mongodb");
 const sequelize = require("./src/config/database");
 const { initMqtt } = require("./src/services/MqttService");
+
 const distanceRoutes = require("./src/routes/DistanceRoutes");
 const userRoutes = require("./src/routes/UserRoutes");
-const Device = require("./src/models/Device");
+const deviceRoutes = require("./src/routes/DeviceRoutes");
+const { router: scannerRouter, setMqttClient: setScannerMqtt } = require("./src/routes/ScannerRoutes");
+const { setMqttClient: setDeviceMqtt } = require("./src/controllers/DeviceController");
 
 const app = express();
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 
-// Middlewares
+// ─── Middlewares ────────────────────────────────────────────────────────────
 app.use(cors());
 app.use(express.json());
 
-// 1. Conexão com o MongoDB
-const MONGO_URI =
-  "mongodb+srv://jogs1_db_user:hxh853SVpn@cluster0.nbxjf8g.mongodb.net/";
-mongoose
-  .connect(MONGO_URI)
-  .then(() => console.log("🍃 MongoDB Conectado com sucesso"))
-  .catch((err) => console.error("❌ Erro ao conectar ao MongoDB:", err));
+// ─── Banco de Dados ─────────────────────────────────────────────────────────
+connectMongo();
 
-// 2. Conexão e Sincronização com o SQLite
 sequelize
   .sync({ alter: true })
-  .then(() => console.log("📦 Banco SQLite inicializado para Usuários!"))
+  .then(() => console.log("📦 SQLite inicializado"))
   .catch((err) => console.error("❌ Erro ao conectar ao SQLite:", err));
 
-// 3. Inicializa o Serviço MQTT
+// ─── MQTT ────────────────────────────────────────────────────────────────────
 const mqttClient = initMqtt();
 
-// 4. Define as Rotas da API
-app.use("/api/distance", distanceRoutes);
-app.use("/api/users", userRoutes); // 👈 3. Ativa as rotas do SQLite (/api/users/register)
+// Injeta o cliente MQTT nos módulos que precisam publicar
+setDeviceMqtt(mqttClient);
+setScannerMqtt(mqttClient);
 
-// Rota extra: Enviar comando para o ESP32 via API (Opcional para a Web 2)
+// ─── Rotas ───────────────────────────────────────────────────────────────────
+app.use("/api/distance", distanceRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/devices", deviceRoutes);
+app.use("/api/scanner", scannerRouter);
+
+// Rota legada — envia comando para LED do ESP32 via MQTT
 app.post("/api/led-command", (req, res) => {
-  const { status } = req.body; // "ON" ou "OFF"
+  const { status } = req.body;
   mqttClient.publish("home/led/command", status);
   res.send({ message: `Comando ${status} enviado ao ESP32` });
 });
 
-// CRUD: Criar dispositivo e avisar o ESP32
-app.post("/api/devices", async (req, res) => {
-  try {
-    const { name } = req.body;
-
-    await Device.findOneAndUpdate(
-      { name: name },
-      { name: name, isActive: true },
-      { upsert: true, new: true },
-    );
-
-    mqttClient.publish("home/scanner/config", name);
-
-    console.log(`✅ Dispositivo ${name} salvo no DB e enviado ao ESP32`);
-    res.json({ message: `ESP32 configurado para buscar: ${name}` });
-  } catch (err) {
-    console.error("Erro ao salvar dispositivo:", err);
-    res.status(500).json({ error: "Erro ao salvar no banco" });
-  }
-});
-
-app.get("/api/devices", async (req, res) => {
-  try {
-    const devices = await Device.find().sort({ name: 1 });
-    res.json(devices);
-  } catch (err) {
-    res.status(500).json({ error: "Erro ao buscar dispositivos" });
-  }
-});
-
-// CRUD: Atualizar dispositivo (nome, descrição, status)
-app.put("/api/devices/:id", async (req, res) => {
-  try {
-    const { name, description, isActive } = req.body;
-
-    const updated = await Device.findByIdAndUpdate(
-      req.params.id,
-      { name, description, isActive },
-      { new: true, runValidators: true },
-    );
-
-    if (!updated) {
-      return res.status(404).json({ error: "Dispositivo não encontrado" });
-    }
-
-    res.json({ message: "Dispositivo atualizado com sucesso!", device: updated });
-  } catch (err) {
-    console.error("Erro ao atualizar dispositivo:", err);
-    res.status(500).json({ error: "Erro ao atualizar dispositivo" });
-  }
-});
-
-// CRUD: Excluir dispositivo individual
-app.delete("/api/devices/:id", async (req, res) => {
-  try {
-    const deleted = await Device.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ error: "Dispositivo não encontrado" });
-    }
-
-    res.json({ message: `Dispositivo "${deleted.name}" excluído com sucesso!` });
-  } catch (err) {
-    console.error("Erro ao excluir dispositivo:", err);
-    res.status(500).json({ error: "Erro ao excluir dispositivo" });
-  }
-});
-
-// Controle: Ligar/Desligar Medição
-app.post("/api/scanner/control", (req, res) => {
-  const { command } = req.body; // "START" ou "STOP"
-  mqttClient.publish("home/scanner/command", command);
-  res.json({ status: `Medição ${command}` });
-});
-
+// ─── Start ───────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚀 Backend rodando em http://localhost:${PORT}`);
 });

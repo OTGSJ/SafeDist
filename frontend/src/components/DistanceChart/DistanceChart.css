@@ -1,0 +1,4 @@
+.distance-chart__container {
+  width: 100%;
+  height: 100%; /* Pai controla a altura via flexbox */
+}

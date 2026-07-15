@@ -108,8 +108,21 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
 }
 
 static void wifi_handler(void* arg, esp_event_base_t base, int32_t id, void* data) {
-    if (id == WIFI_EVENT_STA_START || id == WIFI_EVENT_STA_DISCONNECTED) esp_wifi_connect();
-    else if (id == IP_EVENT_STA_GOT_IP) esp_mqtt_client_start(mqtt_client);
+    if (base == WIFI_EVENT) {
+        if (id == WIFI_EVENT_STA_START) {
+            ESP_LOGI(TAG, "Wi-Fi iniciado. Conectando ao AP...");
+            esp_wifi_connect();
+        } else if (id == WIFI_EVENT_STA_DISCONNECTED) {
+            ESP_LOGW(TAG, "Wi-Fi desconectado! Tentando reconectar...");
+            esp_wifi_connect();
+        }
+    } else if (base == IP_EVENT) {
+        if (id == IP_EVENT_STA_GOT_IP) {
+            ip_event_got_ip_t* event = (ip_event_got_ip_t*) data;
+            ESP_LOGI(TAG, "IP obtido com sucesso: " IPSTR, IP2STR(&event->ip_info.ip));
+            esp_mqtt_client_start(mqtt_client);
+        }
+    }
 }
 
 void app_main(void) {
@@ -131,7 +144,7 @@ void app_main(void) {
     esp_event_handler_instance_register(WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_handler, NULL, NULL);
     esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_handler, NULL, NULL);
     
-    wifi_config_t wifi_config = { .sta = { .ssid = "GalaxyA10", .password = "jose1234" } };
+    wifi_config_t wifi_config = { .sta = { .ssid = "PROXXIMASOUTO", .password = "12345678" } };
     esp_wifi_set_mode(WIFI_MODE_STA);
     esp_wifi_set_config(WIFI_IF_STA, &wifi_config);
     esp_wifi_start();
