@@ -206,45 +206,47 @@ const BeaconsTab = ({ devicesHook }) => {
             Nenhum beacon cadastrado ainda.
           </p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Status</th>
-                <th style={{ textAlign: "right" }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {devices.map((dev) => (
-                <tr key={dev._id}>
-                  <td style={{ fontWeight: 500 }}>{dev.name}</td>
-                  <td>
-                    <span className={`status-badge ${dev.isActive ? "status-badge--active" : "status-badge--inactive"}`}>
-                      <span className="status-badge__dot" />
-                      {dev.isActive ? "Ativo" : "Inativo"}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="data-table__actions">
-                      <button
-                        className="data-table__btn data-table__btn--edit"
-                        onClick={() => openEdit(dev)}
-                      >
-                        <Pencil size={13} style={{ marginRight: 4 }} />
-                        Editar
-                      </button>
-                      <button
-                        className="data-table__btn data-table__btn--delete"
-                        onClick={() => handleDeleteDevice(dev)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Nome</th>
+                  <th>Status</th>
+                  <th style={{ textAlign: "right" }}>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {devices.map((dev) => (
+                  <tr key={dev._id}>
+                    <td style={{ fontWeight: 500 }}>{dev.name}</td>
+                    <td>
+                      <span className={`status-badge ${dev.isActive ? "status-badge--active" : "status-badge--inactive"}`}>
+                        <span className="status-badge__dot" />
+                        {dev.isActive ? "Ativo" : "Inativo"}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="data-table__actions">
+                        <button
+                          className="data-table__btn data-table__btn--edit"
+                          onClick={() => openEdit(dev)}
+                        >
+                          <Pencil size={13} style={{ marginRight: 4 }} />
+                          Editar
+                        </button>
+                        <button
+                          className="data-table__btn data-table__btn--delete"
+                          onClick={() => handleDeleteDevice(dev)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -380,53 +382,55 @@ const UsersTab = ({ usersHook }) => {
             Nenhum usuário cadastrado ainda.
           </p>
         ) : (
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Nome</th>
-                <th>Cadastrado em</th>
-                <th style={{ textAlign: "right" }}>Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u, idx) => (
-                <tr key={u.id}>
-                  <td style={{ color: "var(--color-text-subtle)", width: "40px" }}>
-                    {idx + 1}
-                  </td>
-                  <td>
-                    <div className="data-table__name-cell">
-                      <span className="data-table__avatar">{u.name.charAt(0)}</span>
-                      {u.name}
-                    </div>
-                  </td>
-                  <td style={{ color: "var(--color-text-muted)", fontSize: "0.82rem" }}>
-                    {u.createdAt
-                      ? new Date(u.createdAt).toLocaleDateString("pt-BR")
-                      : "—"}
-                  </td>
-                  <td>
-                    <div className="data-table__actions">
-                      <button
-                        className="data-table__btn data-table__btn--edit"
-                        onClick={() => openEdit(u)}
-                      >
-                        <Pencil size={13} style={{ marginRight: 4 }} />
-                        Editar
-                      </button>
-                      <button
-                        className="data-table__btn data-table__btn--delete"
-                        onClick={() => handleDeleteUser(u)}
-                      >
-                        Excluir
-                      </button>
-                    </div>
-                  </td>
+          <div className="table-responsive">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Nome</th>
+                  <th>Cadastrado em</th>
+                  <th style={{ textAlign: "right" }}>Ações</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((u, idx) => (
+                  <tr key={u.id}>
+                    <td style={{ color: "var(--color-text-subtle)", width: "40px" }}>
+                      {idx + 1}
+                    </td>
+                    <td>
+                      <div className="data-table__name-cell">
+                        <span className="data-table__avatar">{u.name.charAt(0)}</span>
+                        {u.name}
+                      </div>
+                    </td>
+                    <td style={{ color: "var(--color-text-muted)", fontSize: "0.82rem" }}>
+                      {u.createdAt
+                        ? new Date(u.createdAt).toLocaleDateString("pt-BR")
+                        : "—"}
+                    </td>
+                    <td>
+                      <div className="data-table__actions">
+                        <button
+                          className="data-table__btn data-table__btn--edit"
+                          onClick={() => openEdit(u)}
+                        >
+                          <Pencil size={13} style={{ marginRight: 4 }} />
+                          Editar
+                        </button>
+                        <button
+                          className="data-table__btn data-table__btn--delete"
+                          onClick={() => handleDeleteUser(u)}
+                        >
+                          Excluir
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
 
@@ -509,8 +513,15 @@ const Dashboard = ({ user, onLogout }) => {
       {/* ── Área de conteúdo ──────────────────────────────────────────────── */}
       <div className="dashboard__content">
         <div className="content__header">
-          <div className="content__title">{activeNavItem?.label}</div>
-          <div className="content__subtitle">{activeNavItem?.subtitle}</div>
+          <div className="content__header-main">
+            <div>
+              <div className="content__title">{activeNavItem?.label}</div>
+              <div className="content__subtitle">{activeNavItem?.subtitle}</div>
+            </div>
+            <button className="content__mobile-logout" onClick={onLogout} aria-label="Sair da Conta">
+              <LogOut size={20} />
+            </button>
+          </div>
         </div>
 
         <div className="content__body">
@@ -530,6 +541,20 @@ const Dashboard = ({ user, onLogout }) => {
           )}
         </div>
       </div>
+
+      {/* Navigation for mobile screens */}
+      <nav className="bottom-nav">
+        {NAV_ITEMS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            className={`bottom-nav__item${activeTab === id ? " bottom-nav__item--active" : ""}`}
+            onClick={() => setActiveTab(id)}
+          >
+            <Icon size={20} />
+            <span className="bottom-nav__label">{label}</span>
+          </button>
+        ))}
+      </nav>
     </div>
   );
 };
